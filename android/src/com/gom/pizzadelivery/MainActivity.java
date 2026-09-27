@@ -26,7 +26,6 @@ public class MainActivity extends Activity {
         Window w = getWindow();
         w.setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
         w.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
-        useDisplayCutout(w);
 
         web = new WebView(this);
         web.setBackgroundColor(Color.rgb(11, 9, 20));
@@ -47,17 +46,6 @@ public class MainActivity extends Activity {
         setContentView(web);
         hideSystemUi();
         web.loadUrl("file:///android_asset/www/index.html");
-    }
-
-    /** Dibuja tambien bajo el notch (API 28+, via reflexion para compilar con API 23). */
-    private void useDisplayCutout(Window w) {
-        try {
-            WindowManager.LayoutParams lp = w.getAttributes();
-            lp.getClass().getField("layoutInDisplayCutoutMode").setInt(lp, 1);
-            w.setAttributes(lp);
-        } catch (Throwable ignored) {
-            // dispositivo anterior a Android 9: no hay notch que gestionar
-        }
     }
 
     private void hideSystemUi() {

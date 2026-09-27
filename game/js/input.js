@@ -131,14 +131,33 @@ G.Input = (() => {
     stick.active = false; stick.id = -1; stick.ax = 0; stick.ay = 0;
   }
 
+  // respaldo para WebViews antiguos sin Pointer Events
+  function touchAdapter(fn) {
+    return (e) => {
+      e.preventDefault();
+      for (const t of e.changedTouches) {
+        fn({ pointerId: t.identifier + 1000, clientX: t.clientX, clientY: t.clientY, pointerType: 'touch', preventDefault() {} });
+      }
+    };
+  }
+
   function attach(c) {
     canvas = c;
     window.addEventListener('keydown', onKeyDown);
     window.addEventListener('keyup', onKeyUp);
-    c.addEventListener('pointerdown', onPointerDown);
-    c.addEventListener('pointermove', onPointerMove);
-    c.addEventListener('pointerup', onPointerUp);
-    c.addEventListener('pointercancel', onPointerUp);
+    if (window.PointerEvent) {
+      c.addEventListener('pointerdown', onPointerDown);
+      c.addEventListener('pointermove', onPointerMove);
+      c.addEventListener('pointerup', onPointerUp);
+      c.addEventListener('pointercancel', onPointerUp);
+    } else {
+      c.addEventListener('touchstart', touchAdapter(onPointerDown), { passive: false });
+      c.addEventListener('touchmove', touchAdapter(onPointerMove), { passive: false });
+      c.addEventListener('touchend', touchAdapter(onPointerUp), { passive: false });
+      c.addEventListener('touchcancel', touchAdapter(onPointerUp), { passive: false });
+      c.addEventListener('mousedown', (e) => onPointerDown({ pointerId: 1, clientX: e.clientX, clientY: e.clientY, pointerType: 'mouse', preventDefault() {} }));
+      window.addEventListener('mouseup', (e) => onPointerUp({ pointerId: 1, clientX: e.clientX, clientY: e.clientY }));
+    }
     c.addEventListener('contextmenu', (e) => e.preventDefault());
     window.addEventListener('blur', releaseAll);
   }
