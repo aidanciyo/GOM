@@ -1,0 +1,6 @@
+# pruebas locales y artefactos de compilacion
+game/_test*
+build/
+android/build/
+*.idsig
+__pycache__/
