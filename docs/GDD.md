@@ -376,11 +376,20 @@ resultados para que presumir tenga sentido.
 ---
 
 ## 11. Audio
-- **Música chiptune** por barrio, generada con un secuenciador propio (WebAudio): bajo, arpegios,
-  melodía y batería de ruido. **Capas dinámicas:** la Pizza Fever añade percusión y el tiempo bajo sube la tensión.
-- **Efectos:** motor que sube de tono con la velocidad, lanzamiento (*whoosh*), PERFECTO (arpegio
-  brillante), BIEN, FALLO, choque, casi-choque, monedas, turbo, rampa y aterrizaje, trueno, gaviota,
-  olas, claxon de la furgoneta rival, cuenta atrás y fanfarria de récord.
+- **Tema principal:** «Pizza Delivery 8-bit», de **saltamontesenelpelo**. Es la banda sonora de
+  todo el juego (título, menús y partida) y se reproduce en bucle con un **fundido cruzado** de
+  1,6 s para que no se note el corte. Está normalizado a −16 LUFS con 1,5 dB de margen para que
+  los efectos se oigan por encima.
+- **Música dinámica:** cada partida arranca el tema desde el principio (su introducción coincide
+  con la cuenta atrás 3-2-1); en menús, pausa y resultados baja al 45 % del volumen; la **Pizza
+  Fever** lo acelera un 6 % (sube el tono, a lo arcade) y con **menos de 10 s** en el reloj se
+  acelera otro 4 % para meter tensión.
+- **Respaldo:** si el dispositivo no puede reproducir el MP3, el juego cambia solo a los temas
+  chiptune sintetizados con WebAudio (uno por barrio y otro para el título).
+- **Efectos:** sintetizados en tiempo real (más de 30): motor que sube de tono con la velocidad,
+  lanzamiento (*whoosh*), PERFECTO (arpegio brillante), BIEN, FALLO, choque, casi-choque, monedas,
+  turbo, rampa y aterrizaje, trueno, gaviota, olas, claxon de la furgoneta rival, cuenta atrás y
+  fanfarria de récord.
 
 ---
 
@@ -441,8 +450,9 @@ resultados para que presumir tenga sentido.
 - Menús: título con demo automática, garaje (6 mejoras + 6 estelas cosméticas), misiones diarias,
   récords locales, ajustes (volúmenes, vibración, pistas, modo de imagen) y pausa.
 - **Humor** en marcas, tiendas, neones, vallas, señales, frases y consejos (§1.4).
-- Audio 100 % sintetizado: 4 temas chiptune (título y uno por barrio) con capas dinámicas y más de
-  30 efectos.
+- Banda sonora «Pizza Delivery 8-bit» (saltamontesenelpelo) con bucle sin cortes, volumen por
+  escena y aceleración en Fever y con poco tiempo; respaldo chiptune sintetizado y más de 30
+  efectos generados en tiempo real.
 - Controles táctiles (joystick flotante + botones) y de teclado; guardado local.
 
 **Pendiente para siguientes fases:** Pedido del Día con semilla compartida, rankings online,

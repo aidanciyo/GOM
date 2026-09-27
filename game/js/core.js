@@ -2,7 +2,7 @@
 'use strict';
 
 const G = window.G = {
-  VERSION: '1.0.0',
+  VERSION: '1.1.0',
   W: 540, H: 270,          // resolucion logica (se recalcula al redimensionar)
   K: 4,                    // pixeles fisicos por pixel logico
   RS: 4,                   // escala de render del canvas (K = alta calidad, 1 = baja)

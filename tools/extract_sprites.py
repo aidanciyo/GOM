@@ -73,13 +73,13 @@ CROPS = {
     'hydrant':       ('A', (1275, 900, 46, 71), 17, {'outline': True}),
     'billboard':     ('A', (1330, 887, 93, 84), 30, {'outline': True}),
     # --- decorado grande ---
-    'palm':          ('B', (1132, 535, 144, 203), 92, {'outline': True}),
+    'palm':          ('B', (1132, 535, 144, 203), 92, {'outline': True, 'solid': False}),
     'lamp':          ('B', (1362, 542, 64, 196), 64, {'outline': True}),
     'house':         ('B', (864, 538, 227, 195), 84, {}),
     'pizzeria':      ('B', (1273, 295, 235, 212), 92, {}),
     'pizzeria_b':    ('A', (577, 822, 164, 143), 70, {}),
     'wall_pillar':   ('A', (739, 836, 52, 124), 44, {}),
-    'fence':         ('A', (787, 874, 76, 89), 26, {'outline': True}),
+    'fence':         ('A', (787, 874, 76, 89), 26, {'outline': True, 'solid': False}),
     # --- logo ---
     'logo':          ('L', (0, 0, 1254, 1254), 150, {'trim': True}),
 }
@@ -89,16 +89,36 @@ def load(sheet):
     return np.array(Image.open(os.path.join(SRC, SHEETS[sheet])).convert('RGBA'))
 
 
-def remove_bg(arr, thr=26):
-    """Rellena desde el borde los pixeles casi negros -> transparentes."""
-    mx = arr[:, :, :3].astype(int).max(axis=2)
-    cand = mx < thr
-    lab, _ = ndi.label(cand)
-    border = set(np.unique(np.concatenate([lab[0], lab[-1], lab[:, 0], lab[:, -1]])))
-    border.discard(0)
-    bg = np.isin(lab, list(border))
+def remove_bg(arr, thr=26, solid=True):
+    """Quita el fondo negro de la hoja de concepto.
+
+    solid=True  (por defecto): el sprite es un objeto macizo. Se toma como figura
+                todo lo que no es negro puro, se cierran las rendijas y se rellenan
+                los huecos interiores; asi los negros del dibujo (chaquetas,
+                neumaticos, contornos, el circulo del logo) no se vuelven
+                transparentes aunque toquen el fondo.
+    solid=False: para sprites con huecos reales (palmera, verja): relleno desde el
+                borde, pero erosionando antes para que no se cuele por contornos finos.
+    """
+    rgb = arr[:, :, :3].astype(int)
+    mx = rgb.max(axis=2)
+    if solid:
+        fg = mx > 12
+        fg = ndi.binary_closing(fg, structure=np.ones((3, 3), bool), iterations=2, border_value=0)
+        fg = ndi.binary_fill_holes(fg)
+        # recupera el contorno casi negro pegado a la silueta
+        ring = ndi.binary_dilation(fg, iterations=2) & ~fg & (mx > 3)
+        fg = ndi.binary_fill_holes(fg | ring)
+    else:
+        cand = mx < thr
+        core = ndi.binary_erosion(cand, iterations=2, border_value=1)
+        lab, _ = ndi.label(core)
+        border = set(np.unique(np.concatenate([lab[0], lab[-1], lab[:, 0], lab[:, -1]])))
+        border.discard(0)
+        bg = ndi.binary_dilation(np.isin(lab, list(border)), iterations=3) & cand
+        fg = ~bg
     out = arr.copy()
-    out[:, :, 3] = np.where(bg, 0, 255)
+    out[:, :, 3] = np.where(fg, 255, 0)
     # limpia islas diminutas (ruido de compresion)
     op = out[:, :, 3] > 0
     lab2, n2 = ndi.label(op)
@@ -106,8 +126,8 @@ def remove_bg(arr, thr=26):
         sizes = ndi.sum(op, lab2, range(1, n2 + 1))
         keep = np.zeros(n2 + 1, bool)
         big = sizes.max()
-        for i, s in enumerate(sizes, 1):
-            keep[i] = s >= max(12, big * 0.004)
+        for i, sz in enumerate(sizes, 1):
+            keep[i] = sz >= max(12, big * 0.004)
         out[:, :, 3] = np.where(keep[lab2], 255, 0)
     return out
 
@@ -201,7 +221,7 @@ def main():
         if sheet not in cache:
             cache[sheet] = load(sheet)
         src = cache[sheet][y:y + h, x:x + w]
-        arr = remove_bg(src)
+        arr = remove_bg(src, solid=opt.get('solid', True))
         arr = trim(arr)
         arr = downscale(arr, th)
         arr = boost(arr)

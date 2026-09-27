@@ -620,7 +620,7 @@ G.UI = (() => {
       const labels = ['MÚSICA', 'EFECTOS', 'VIBRACIÓN', 'PISTAS DE TUTORIAL', 'IMAGEN', 'BORRAR PROGRESO'];
       labels.forEach((l, i) => F().draw(ctx, l, this.px + 10, 56 + i * 26 + 6 + (i === 5 ? 6 : 0), { color: '#ffffff', outline: INK }));
       F().draw(ctx, 'CONTROLES: ↑↓ CARRIL · →← VELOCIDAD · ESPACIO LANZAR · SHIFT TURBO · C SALTO · P PAUSA', W / 2, G.H - 26, { color: '#9a90b8', align: 'center' });
-      F().draw(ctx, 'GOM PIZZA DELIVERY V' + G.VERSION + ' · PIXEL ART Y CHIPTUNE HECHOS A MANO', W / 2, G.H - 14, { color: '#6a6080', align: 'center' });
+      F().draw(ctx, 'MÚSICA: «PIZZA DELIVERY 8-BIT» · SALTAMONTESENELPELO · GOM PIZZA DELIVERY V' + G.VERSION, W / 2, G.H - 14, { color: '#8a80a0', align: 'center' });
       this.menu.draw(ctx);
     }
     back() { G.go(new Scenes.Title(true)); return true; }

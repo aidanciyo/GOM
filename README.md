@@ -14,6 +14,9 @@ Costa Tormenta), esquivando tráfico, peatones pegados al móvil, furgonetas de 
 - **Diseño completo (GDD):** [`docs/GDD.md`](docs/GDD.md)
 - **APK para Android:** [`dist/GOM-Pizza-Delivery.apk`](dist/GOM-Pizza-Delivery.apk)
 - **Arte de concepto original:** [`docs/concept/`](docs/concept/)
+- **Música:** «Pizza Delivery 8-bit», de **saltamontesenelpelo** (`game/assets/music/`). Suena en
+  bucle con fundido cruzado, baja de volumen en menús y pausa, y se acelera en la Pizza Fever y
+  cuando quedan menos de 10 segundos. Los efectos de sonido se sintetizan en tiempo real.
 - **Icono de la app:** adaptativo para Android 8+ (fondo de rayos de atardecer, GOM en pixel art
   mordiendo una porción y capa monocroma para los iconos temáticos de Android 13+), con versión
   clásica y de 512 px en [`docs/icono/`](docs/icono/). Se regenera con `python3 tools/make_icons.py`.
@@ -94,8 +97,9 @@ game/               juego HTML5 (canvas 2D + WebAudio, sin dependencias)
   js/generator.js   generación infinita: rutas, patrones, atrezo
   js/run.js         partida: colisiones, entregas, combos, luces, IA demo
   js/hud.js, ui.js  HUD, controles táctiles y menús
-  js/audio.js       efectos y música chiptune sintetizados
+  js/audio.js       reproductor de la música (MP3) y efectos sintetizados
   assets/img/       sprites (extraídos del concepto + generados)
+  assets/music/     tema principal «Pizza Delivery 8-bit»
 android/            envoltorio WebView (Activity, manifiesto, iconos)
 tools/              extract_sprites.py, gen_sprites.py, make_icons.py (icono), build_apk.sh
 docs/               GDD, arte de concepto y capturas

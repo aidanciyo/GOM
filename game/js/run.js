@@ -123,6 +123,7 @@ G.Run = class {
     if (this.hint) { this.hint.t += dt; if (this.hint.t > this.hint.life) this.hint = null; }
     this.updateHints();
     G.Audio.engineSet(p.speed01, this.state === 'play' || this.state === 'intro');
+    if (!this.demo) G.Audio.setTension(this.state === 'play' && this.time < 10);
     this.stats.distance = this.meters;
   }
 
@@ -183,6 +184,7 @@ G.Run = class {
     this.deathCause = cause;
     this.player.control = false;
     this.player.turboT = 0;
+    G.Audio.setTension(false);
     this.stats.score = this.score;
     this.stats.bestCombo = Math.max(this.stats.bestCombo, this.combo);
     G.Audio.setIntensity(0);

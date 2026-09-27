@@ -41,13 +41,20 @@ G.Audio = (() => {
   }
 
   function unlock() {
+    mp3Unblock();
     if (!enabled) return;
     if (!ac) init();
     if (ac && ac.state === 'suspended') ac.resume();
   }
 
-  function suspend() { if (ac && ac.state === 'running') ac.suspend(); }
-  function resume() { if (ac && ac.state === 'suspended') ac.resume(); }
+  function suspend() {
+    mp3Suspend();
+    if (ac && ac.state === 'running') ac.suspend();
+  }
+  function resume() {
+    mp3Resume();
+    if (ac && ac.state === 'suspended') ac.resume();
+  }
 
   function setVolumes(m, s) {
     musicVol = m; sfxVol = s;
@@ -439,9 +446,115 @@ G.Audio = (() => {
     void spb;
   }
 
+  // ------------------------------------------------------------ tema principal en MP3
+  // «Pizza Delivery 8-bit» (saltamontesenelpelo). Dos elementos <audio> que se
+  // relevan con un fundido cruzado para que el bucle no tenga cortes. Si el MP3
+  // no se puede cargar, el juego vuelve a la musica chiptune sintetizada.
+  const TRACK = { src: 'assets/music/pizza_delivery_8bit.mp3', xfade: 1.6 };
+  const mp3 = {
+    els: [], cur: 0, failed: false, want: false, blocked: false, suspended: false,
+    gain: 1, gainTarget: 1, fade: 0, fadeTarget: 0, rate: 1, intensity: 1, tension: false, xf: -1,
+  };
+  function mp3Init() {
+    if (mp3.els.length || mp3.failed) return;
+    if (typeof Audio === 'undefined') { mp3.failed = true; return; }
+    for (let i = 0; i < 2; i++) {
+      const a = new Audio();
+      a.preload = 'auto';
+      a.loop = false;
+      a.volume = 0;
+      try { a.preservesPitch = false; a.mozPreservesPitch = false; a.webkitPreservesPitch = false; } catch (e) { /* opcional */ }
+      a.addEventListener('error', () => { mp3.failed = true; mp3Fallback(); });
+      a.addEventListener('ended', () => {
+        // por si no llego a dispararse el fundido (duracion desconocida)
+        if (mp3.want && mp3.els[mp3.cur] === a && mp3.xf < 0) mp3Play(a, 0);
+      });
+      a.src = TRACK.src;
+      mp3.els.push(a);
+    }
+  }
+  function mp3Play(el, from) {
+    try { if (from !== undefined) el.currentTime = from; } catch (e) { /* aun sin metadatos */ }
+    el.playbackRate = mp3.rate;
+    const p = el.play();
+    if (p && p.catch) p.catch(() => { mp3.blocked = true; });
+  }
+  function mp3Unblock() {
+    if (!mp3.blocked || !mp3.want || mp3.suspended) return;
+    mp3.blocked = false;
+    mp3Play(mp3.els[mp3.cur]);
+  }
+  function mp3Start(restart) {
+    mp3Init();
+    if (mp3.failed) return false;
+    const a = mp3.els[mp3.cur];
+    if (restart || !mp3.want || a.paused) {
+      mp3.els.forEach((e, i) => { if (i !== mp3.cur) e.pause(); });
+      mp3.xf = -1;
+      if (restart) mp3.fade = 0;
+      mp3Play(a, restart ? 0 : undefined);
+    }
+    mp3.want = true;
+    mp3.fadeTarget = 1;
+    return true;
+  }
+  function mp3Stop() { mp3.want = false; mp3.fadeTarget = 0; }
+  function mp3Suspend() {
+    mp3.suspended = true;
+    mp3.els.forEach((e) => e.pause());
+  }
+  function mp3Resume() {
+    if (!mp3.suspended) return;
+    mp3.suspended = false;
+    if (!mp3.want || mp3.failed) return;
+    mp3Play(mp3.els[mp3.cur]);
+    if (mp3.xf >= 0) mp3Play(mp3.els[1 - mp3.cur]);
+  }
+  function mp3Fallback() {
+    // sin MP3: vuelve el chiptune
+    if (mp3.want) music(seq.name || 'title', true);
+  }
+  function mp3Update(dt) {
+    if (!mp3.els.length || mp3.failed || mp3.suspended) return;
+    mp3.fade = G.approach(mp3.fade, mp3.fadeTarget, dt / (mp3.fadeTarget > mp3.fade ? 0.5 : 0.9));
+    mp3.gain = G.approach(mp3.gain, mp3.gainTarget, dt * 1.2);
+    const rateTarget = (mp3.intensity >= 2 ? 1.06 : 1) + (mp3.tension ? 0.04 : 0);
+    mp3.rate = G.approach(mp3.rate, rateTarget, dt * 0.25);
+    const a = mp3.els[mp3.cur], b = mp3.els[1 - mp3.cur];
+    if (mp3.want && !a.paused && mp3.xf < 0 && isFinite(a.duration) && a.duration > 10 &&
+        a.currentTime > a.duration - TRACK.xfade) {
+      mp3.xf = 0;
+      mp3Play(b, 0);
+    }
+    let va = 1, vb = 0;
+    if (mp3.xf >= 0) {
+      mp3.xf += dt;
+      const k = Math.min(1, mp3.xf / TRACK.xfade);
+      va = Math.cos(k * Math.PI / 2);
+      vb = Math.sin(k * Math.PI / 2);
+      if (k >= 1) {
+        a.pause();
+        mp3.cur = 1 - mp3.cur;
+        mp3.xf = -1;
+        va = 0; vb = 1;
+      }
+    }
+    const base = G.clamp(musicVol * mp3.gain * mp3.fade, 0, 1);
+    const A = mp3.els[mp3.cur], B = mp3.els[1 - mp3.cur];
+    if (mp3.xf >= 0) { a.volume = G.clamp(base * va, 0, 1); b.volume = G.clamp(base * vb, 0, 1); } else { A.volume = base; B.volume = 0; }
+    for (const e of mp3.els) if (!e.paused && Math.abs(e.playbackRate - mp3.rate) > 0.002) e.playbackRate = mp3.rate;
+    if (!mp3.want && mp3.fade <= 0.001) mp3.els.forEach((e) => { if (!e.paused) e.pause(); });
+  }
+
   function music(name, immediate) {
-    if (!ac) return;
     if (!name) { stopMusic(); return; }
+    if (!mp3.failed) {
+      // un unico tema para todo el juego: solo se reinicia cuando se pide
+      seq.name = name;
+      if (seq.timer) { clearInterval(seq.timer); seq.timer = null; seq.song = null; }
+      if (mp3Start(!!immediate)) return;
+    }
+    if (!ac) return;
     if (seq.name === name && seq.timer) return;
     if (!seq.timer || immediate) {
       seq.song = SONGS[name]; seq.name = name; seq.step = 0; seq.pending = null;
@@ -452,18 +565,26 @@ G.Audio = (() => {
     }
   }
   function stopMusic() {
+    mp3Stop();
     if (seq.timer) clearInterval(seq.timer);
     seq.timer = null; seq.song = null; seq.name = null;
   }
-  function setIntensity(i) { seq.intensity = i; }
+  function setIntensity(i) {
+    seq.intensity = i;
+    mp3.intensity = i;
+    mp3.gainTarget = i <= 0 ? 0.45 : 1;
+  }
+  function setTension(on) { mp3.tension = !!on; }
+  function update(dt) { mp3Update(dt); }
 
   return {
-    init, unlock, suspend, resume, sfx, music, stopMusic, setIntensity, setVolumes,
+    init, unlock, suspend, resume, sfx, music, stopMusic, setIntensity, setTension, setVolumes, update,
     mute(v) { muted = v; },
     engineStart, engineSet, engineStop,
     get ready() { return !!ac && ac.state === 'running'; },
     get ctx() { return ac; },
     get out() { return master; },
     get current() { return seq.name; },
+    get mp3() { return mp3; },
   };
 })();

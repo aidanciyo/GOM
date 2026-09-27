@@ -84,6 +84,7 @@
       if (nextScene) break;
     }
     if (steps >= 6) acc = 0;
+    G.Audio.update(dt);
     G.frame++;
     ctx.setTransform(G.RS, 0, 0, G.RS, 0, 0);
     ctx.imageSmoothingEnabled = false;
